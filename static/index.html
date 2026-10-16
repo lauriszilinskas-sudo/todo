@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SmartTask — Rizikos Cesija</title>
+<style>
+  :root {
+    --green:  #143D34;
+    --gold:   #CBA052;
+    --navy:   #19395B;
+    --bg:     #F5F4F0;
+    --white:  #ffffff;
+    --text:   #1a1a1a;
+    --muted:  #6b7280;
+    --border: #ddd8ce;
+    --red:    #c0392b;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--green);
+    color: var(--white);
+    padding: 14px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    box-shadow: 0 2px 10px rgba(20,61,52,0.4);
+    z-index: 10;
+  }
+
+  header h1 { font-size: 1.25rem; font-weight: 700; letter-spacing: 0.03em; }
+  .logo-accent { color: var(--gold); }
+
+  .header-date {
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.65);
+    font-weight: 400;
+  }
+
+  /* ── MAIN LAYOUT ── */
+  .app {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* ── LEFT: CALENDAR ── */
+  .calendar-pane {
+    width: 340px;
+    flex-shrink: 0;
+    background: var(--white);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .cal-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px 10px;
+    border-bottom: 1px solid var(--border);
+    gap: 6px;
+  }
+
+  .cal-nav button {
+    background: none;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    height: 32px;
+    padding: 0 10px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    color: var(--green);
+    transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center;
+    white-space: nowrap;
+    font-family: inherit;
+    font-weight: 600;
+  }
+
+  .cal-nav button.arrow { width: 32px; padding: 0; font-size: 1rem; }
+  .cal-nav button:hover { background: var(--green); color: var(--white); border-color: var(--green); }
+
+  .cal-month {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--green);
+    text-transform: capitalize;
+    flex: 1;
+    text-align: center;
+  }
+
+  .cal-legend {
+    display: flex;
+    gap: 10px;
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--border);
+    background: #fafaf8;
+  }
+
+  .legend-item {
+    display: flex; align-items: center; gap: 4px;
+    font-size: 0.68rem; color: var(--muted); font-weight: 500;
+  }
+
+  .legend-box {
+    width: 14px; height: 14px; border-radius: 4px;
+    background: var(--green);
+  }
+
+  .legend-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--gold);
+  }
+
+  .cal-grid {
+    padding: 12px 16px;
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  .cal-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    margin-bottom: 6px;
+  }
+
+  .cal-weekdays span {
+    text-align: center;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 4px 0;
+  }
+
+  .cal-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 3px;
+  }
+
+  .cal-day {
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-size: 0.88rem;
+    font-weight: 500;
+    position: relative;
+    gap: 2px;
+  }
+
+  .cal-day:hover { background: rgba(20,61,52,0.08); }
+
+  .cal-day.other-month { color: #ccc; cursor: default; }
+  .cal-day.other-month:hover { background: none; }
+
+  .cal-day.today {
+    background: var(--green);
+    color: var(--white);
+    font-weight: 700;
+  }
+
+  .cal-day.today:hover { background: #1a5244; }
+
+  .cal-day.selected {
+    background: rgba(203,160,82,0.2);
+    color: var(--green);
+    font-weight: 700;
+    outline: 2px solid var(--gold);
+  }
+
+  .cal-day.today.selected {
+    background: var(--green);
+    color: var(--white);
+    outline: 2px solid var(--gold);
+  }
+
+  .dot-row {
+    display: flex;
+    gap: 2px;
+    height: 5px;
+    align-items: center;
+  }
+
+  .dot {
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .dot.high   { background: var(--red); }
+  .dot.mid    { background: var(--gold); }
+  .dot.low    { background: var(--green); }
+  .cal-day.today .dot { background: rgba(255,255,255,0.8); }
+
+  /* ── RIGHT: TASKS PANE ── */
+  .tasks-pane {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 0;
+  }
+
+  .tasks-header {
+    padding: 20px 28px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--white);
+    flex-shrink: 0;
+  }
+
+  .tasks-header h2 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--green);
+  }
+
+  .tasks-header .sub {
+    font-size: 0.82rem;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  /* Add form */
+  .add-form {
+    padding: 14px 28px;
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .form-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
+
+  .field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .field-group label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--green);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .field-group.grow { flex: 1; min-width: 180px; }
+
+  input[type="text"], input[type="date"], select {
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    background: #fafaf8;
+    color: var(--text);
+    font-family: inherit;
+    width: 100%;
+  }
+
+  input[type="text"]:focus, input[type="date"]:focus, select:focus {
+    border-color: var(--green);
+    box-shadow: 0 0 0 3px rgba(20,61,52,0.1);
+    background: var(--white);
+  }
+
+  .add-btn {
+    background: var(--gold);
+    color: var(--white);
+    border: none;
+    border-radius: 8px;
+    padding: 8px 20px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    white-space: nowrap;
+    height: 37px;
+    align-self: flex-end;
+  }
+
+  .add-btn:hover { background: #b8893d; transform: translateY(-1px); }
+  .add-btn:active { transform: translateY(0); }
+
+  /* Task list */
+  .task-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .task-card {
+    background: var(--white);
+    border-radius: 10px;
+    padding: 13px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 1px 4px rgba(20,61,52,0.07);
+    transition: transform 0.15s, box-shadow 0.15s;
+    border-left: 4px solid var(--border);
+  }
+
+  .task-card:hover { transform: translateY(-1px); box-shadow: 0 3px 12px rgba(20,61,52,0.12); }
+  .task-card.done { opacity: 0.4; }
+  .task-card.done .task-title { text-decoration: line-through; }
+  .task-card.p-aukštas  { border-left-color: var(--red); }
+  .task-card.p-vidutinis { border-left-color: var(--gold); }
+  .task-card.p-žemas    { border-left-color: var(--green); }
+
+  .done-btn {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    background: var(--white);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.7rem;
+    flex-shrink: 0;
+    transition: all 0.2s;
+  }
+
+  .done-btn:hover { border-color: var(--green); background: rgba(20,61,52,0.08); }
+  .task-card.done .done-btn { background: var(--green); border-color: var(--green); color: var(--white); }
+
+  .task-info { flex: 1; }
+  .task-title { font-size: 0.93rem; font-weight: 500; }
+  .task-meta { display: flex; gap: 6px; margin-top: 4px; flex-wrap: wrap; }
+
+  .tag {
+    font-size: 0.7rem; padding: 2px 8px;
+    border-radius: 8px; font-weight: 500;
+  }
+
+  .tag.priority-aukštas  { background: rgba(192,57,43,0.12); color: var(--red); }
+  .tag.priority-vidutinis { background: rgba(203,160,82,0.15); color: #8a6520; }
+  .tag.priority-žemas    { background: rgba(20,61,52,0.1); color: var(--green); }
+  .tag.category { background: rgba(25,57,91,0.1); color: var(--navy); }
+
+  .task-notes {
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-top: 4px;
+    font-style: italic;
+    line-height: 1.4;
+  }
+
+  .task-title.editable {
+    cursor: pointer;
+  }
+
+  .task-title.editable:hover {
+    color: var(--green);
+    text-decoration: underline dotted var(--green);
+  }
+
+  .inline-edit {
+    font-size: 0.93rem;
+    font-weight: 500;
+    border: 1.5px solid var(--green);
+    border-radius: 5px;
+    padding: 2px 6px;
+    outline: none;
+    font-family: inherit;
+    width: 100%;
+    background: var(--white);
+    box-shadow: 0 0 0 3px rgba(20,61,52,0.1);
+  }
+
+  .delete-btn {
+    background: none;
+    border: 1.5px solid var(--border);
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 0.8rem;
+    padding: 5px 8px;
+    border-radius: 7px;
+    transition: color 0.2s, background 0.2s, border-color 0.2s;
+    display: flex; align-items: center; gap: 4px;
+    white-space: nowrap;
+    font-family: inherit;
+  }
+
+  .delete-btn:hover {
+    color: var(--red);
+    background: rgba(192,57,43,0.08);
+    border-color: var(--red);
+  }
+
+  /* ── STATS PANEL ── */
+  #stats-panel {
+    background: var(--white);
+    border-bottom: 2px solid var(--border);
+    padding: 16px 28px;
+    display: none;
+    flex-shrink: 0;
+  }
+
+  #stats-panel.open { display: block; }
+
+  .stats-grid {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+
+  .stat-card {
+    background: #fafaf8;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 18px;
+    min-width: 100px;
+    text-align: center;
+  }
+
+  .stat-card .stat-num {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: var(--green);
+    line-height: 1;
+  }
+
+  .stat-card .stat-num.red  { color: var(--red); }
+  .stat-card .stat-num.gold { color: var(--gold); }
+
+  .stat-card .stat-label {
+    font-size: 0.7rem;
+    color: var(--muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 4px;
+  }
+
+  .stats-chart-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 8px;
+  }
+
+  .chart-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    height: 60px;
+  }
+
+  .chart-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    flex: 1;
+  }
+
+  .chart-bar-wrap {
+    width: 100%;
+    background: var(--border);
+    border-radius: 4px 4px 0 0;
+    height: 50px;
+    display: flex;
+    align-items: flex-end;
+    overflow: hidden;
+  }
+
+  .chart-bar {
+    width: 100%;
+    background: var(--green);
+    border-radius: 4px 4px 0 0;
+    transition: height 0.3s ease;
+    min-height: 2px;
+  }
+
+  .chart-bar.has-done { background: var(--gold); }
+
+  .chart-label {
+    font-size: 0.62rem;
+    color: var(--muted);
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  /* Search bar */
+  .search-bar {
+    padding: 10px 28px;
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .search-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .search-wrap .search-icon {
+    position: absolute;
+    left: 10px;
+    font-size: 0.85rem;
+    color: var(--muted);
+    pointer-events: none;
+  }
+
+  #search-input {
+    width: 100%;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 7px 32px 7px 32px;
+    font-size: 0.88rem;
+    background: #fafaf8;
+    color: var(--text);
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  #search-input:focus {
+    border-color: var(--green);
+    box-shadow: 0 0 0 3px rgba(20,61,52,0.1);
+    background: var(--white);
+  }
+
+  .search-clear {
+    position: absolute;
+    right: 8px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--muted);
+    font-size: 0.85rem;
+    padding: 2px 4px;
+    border-radius: 4px;
+    display: none;
+    font-family: inherit;
+  }
+
+  .search-clear:hover { color: var(--text); }
+  .search-clear.visible { display: block; }
+
+  .search-count {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-top: 4px;
+    min-height: 16px;
+  }
+
+  .empty {
+    text-align: center; color: var(--muted);
+    padding: 40px 0; font-size: 0.9rem;
+  }
+
+  .empty span { font-size: 2rem; display: block; margin-bottom: 10px; opacity: 0.4; }
+
+  .undated-section {
+    border-top: 2px dashed var(--border);
+    flex-shrink: 0;
+  }
+
+  .undated-header {
+    padding: 10px 28px 4px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--muted);
+  }
+
+  #undated-list {
+    max-height: 220px;
+    overflow-y: auto;
+    padding: 4px 28px 14px;
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 700px) {
+    body { overflow: auto; }
+
+    .app { flex-direction: column; overflow: visible; }
+
+    .calendar-pane {
+      width: 100%;
+      border-right: none;
+      border-bottom: 1px solid var(--border);
+      max-height: 380px;
+    }
+
+    .tasks-pane { overflow: visible; }
+
+    .task-list { overflow-y: visible; padding: 12px 14px; }
+
+    .tasks-header { padding: 14px 14px 10px; }
+
+    .add-form { padding: 10px 14px; }
+
+    .form-row { flex-direction: column; gap: 8px; }
+
+    .field-group.grow { min-width: 0; }
+
+    .add-btn { width: 100%; height: 42px; }
+
+    .delete-btn span.btn-label { display: none; }
+
+    .undated-header { padding: 10px 14px 4px; }
+
+    #undated-list { padding: 4px 14px 14px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1><span class="logo-accent">RC</span> SmartTask</h1>
+  <div style="display:flex;align-items:center;gap:12px">
+    <span class="header-date" id="header-date"></span>
+    <button id="stats-btn" onclick="toggleStats()" style="background:rgba(255,255,255,0.15);border:1.5px solid rgba(255,255,255,0.3);color:#fff;border-radius:8px;padding:5px 12px;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:inherit;transition:background 0.2s" onmouseover="this.style.background='rgba(255,255,255,0.25)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">📊 Statistika</button>
+  </div>
+</header>
+
+<div class="app">
+
+  <!-- LEFT: Calendar -->
+  <div class="calendar-pane">
+    <div class="cal-nav">
+      <button class="arrow" onclick="changeMonth(-1)" title="Ankstesnis mėnuo">&#8249;</button>
+      <span class="cal-month" id="cal-month-label"></span>
+      <button onclick="goToday()">Šiandien</button>
+      <button class="arrow" onclick="changeMonth(1)" title="Kitas mėnuo">&#8250;</button>
+    </div>
+    <div class="cal-legend">
+      <div class="legend-item"><div class="legend-box"></div> Šiandien</div>
+      <div class="legend-item"><div class="legend-dot"></div> Yra užduočių</div>
+    </div>
+    <div class="cal-grid">
+      <div class="cal-weekdays">
+        <span>Pr</span><span>An</span><span>Tr</span><span>Kt</span>
+        <span>Pn</span><span>Št</span><span>Sk</span>
+      </div>
+      <div class="cal-days" id="cal-days"></div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Tasks -->
+  <div class="tasks-pane">
+    <div class="tasks-header">
+      <h2 id="day-title">Pasirinkite dieną</h2>
+      <div class="sub" id="day-sub"></div>
+    </div>
+
+    <div class="add-form">
+      <div class="form-row">
+        <div class="field-group grow">
+          <label for="title-input">Užduotis</label>
+          <input id="title-input" type="text" placeholder="Įveskite užduoties pavadinimą..." />
+        </div>
+        <div class="field-group">
+          <label for="priority-input">Prioritetas</label>
+          <select id="priority-input">
+            <option value="vidutinis">🟡 Vidutinis</option>
+            <option value="aukštas">🔴 Aukštas</option>
+            <option value="žemas">🟢 Žemas</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label for="category-input">Kategorija</label>
+          <input id="category-input" type="text" placeholder="pvz. Darbas..." style="width:130px" />
+        </div>
+        <div class="field-group" style="flex:2;min-width:200px">
+          <label for="notes-input">Pastaba</label>
+          <input id="notes-input" type="text" placeholder="Papildoma info..." />
+        </div>
+        <div class="field-group" style="justify-content:flex-end;padding-bottom:6px">
+          <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:0.75rem;font-weight:600;color:var(--muted);text-transform:none;letter-spacing:0">
+            <input id="no-date-input" type="checkbox" style="width:auto;border:none;padding:0;background:none;accent-color:var(--green)" />
+            Be datos
+          </label>
+        </div>
+        <button class="add-btn" onclick="addTask()">+ Pridėti</button>
+      </div>
+    </div>
+
+    <div id="stats-panel">
+      <div class="stats-grid" id="stats-grid"></div>
+      <div class="stats-chart-title">Paskutinės 7 dienos — neatliktų užduočių</div>
+      <div class="chart-bars" id="chart-bars"></div>
+    </div>
+
+    <div class="search-bar">
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input id="search-input" type="text" placeholder="Ieškoti užduotyse..." autocomplete="off" />
+        <button class="search-clear" id="search-clear" onclick="clearSearch()" title="Išvalyti">✕</button>
+      </div>
+      <div class="search-count" id="search-count"></div>
+    </div>
+
+    <div class="task-list" id="task-list"></div>
+
+    <div class="undated-section" id="undated-section" style="display:none">
+      <div class="undated-header">📌 Be datos</div>
+      <div class="task-list" id="undated-list"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const MONTHS_LT = ['Sausis','Vasaris','Kovas','Balandis','Gegužė','Birželis',
+                     'Liepa','Rugpjūtis','Rugsėjis','Spalis','Lapkritis','Gruodis'];
+  const DAYS_LT   = ['sekmadienis','pirmadienis','antradienis','trečiadienis',
+                     'ketvirtadienis','penktadienis','šeštadienis'];
+
+  const today = new Date();
+  let viewYear  = today.getFullYear();
+  let viewMonth = today.getMonth();
+  let selectedDate = toISO(today);
+  let allTasks = [];
+  let tasksByDate = {};
+  let filterQuery = '';
+
+  function toISO(d) {
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+
+  function fmtDisplay(iso) {
+    if (!iso) return '';
+    const [y,m,d] = iso.split('-').map(Number);
+    const dt = new Date(y, m-1, d);
+    return `${DAYS_LT[dt.getDay()]}, ${d} ${MONTHS_LT[m-1].toLowerCase()} ${y}`;
+  }
+
+  // ── Header date ──
+  document.getElementById('header-date').textContent = fmtDisplay(toISO(today));
+
+  // ── API ──
+  async function fetchTasks() {
+    const r = await fetch('/api/tasks?all');
+    allTasks = await r.json();
+    tasksByDate = {};
+    allTasks.forEach(t => {
+      if (t.deadline && !t.done) {
+        if (!tasksByDate[t.deadline]) tasksByDate[t.deadline] = [];
+        tasksByDate[t.deadline].push(t);
+      }
+    });
+    renderCalendar();
+    renderDayTasks();
+  }
+
+  async function addTask() {
+    const title = document.getElementById('title-input').value.trim();
+    if (!title) { document.getElementById('title-input').focus(); return; }
+    const noDate = document.getElementById('no-date-input').checked;
+    await fetch('/api/tasks', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        title,
+        priority: document.getElementById('priority-input').value,
+        deadline: noDate ? null : selectedDate,
+        category: document.getElementById('category-input').value.trim() || null,
+        notes: document.getElementById('notes-input').value.trim() || null,
+      })
+    });
+    document.getElementById('title-input').value = '';
+    document.getElementById('category-input').value = '';
+    document.getElementById('notes-input').value = '';
+    fetchTasks();
+  }
+
+  async function markDone(id) {
+    await fetch(`/api/tasks/${id}/done`, {method:'POST'});
+    fetchTasks();
+  }
+
+  async function deleteTask(id) {
+    await fetch(`/api/tasks/${id}`, {method:'DELETE'});
+    fetchTasks();
+  }
+
+  // ── Calendar ──
+  function changeMonth(delta) {
+    viewMonth += delta;
+    if (viewMonth > 11) { viewMonth = 0; viewYear++; }
+    if (viewMonth < 0)  { viewMonth = 11; viewYear--; }
+    renderCalendar();
+  }
+
+  function goToday() {
+    viewYear  = today.getFullYear();
+    viewMonth = today.getMonth();
+    selectedDate = toISO(today);
+    renderCalendar();
+    renderDayTasks();
+  }
+
+  function renderCalendar() {
+    document.getElementById('cal-month-label').textContent =
+      `${MONTHS_LT[viewMonth]} ${viewYear}`;
+
+    const firstDay = new Date(viewYear, viewMonth, 1);
+    // Pirmadienis = 0
+    let startOffset = firstDay.getDay() - 1;
+    if (startOffset < 0) startOffset = 6;
+
+    const daysInMonth  = new Date(viewYear, viewMonth+1, 0).getDate();
+    const daysInPrev   = new Date(viewYear, viewMonth, 0).getDate();
+    const todayISO     = toISO(today);
+
+    let html = '';
+
+    // Prev month fill
+    for (let i = startOffset - 1; i >= 0; i--) {
+      html += `<div class="cal-day other-month">${daysInPrev - i}</div>`;
+    }
+
+    // Current month
+    for (let d = 1; d <= daysInMonth; d++) {
+      const iso = `${viewYear}-${String(viewMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const tasks = tasksByDate[iso] || [];
+      const isToday    = iso === todayISO;
+      const isSelected = iso === selectedDate;
+
+      let dots = '';
+      if (tasks.length) {
+        const high = tasks.some(t => t.priority === 'aukštas');
+        const mid  = tasks.some(t => t.priority === 'vidutinis');
+        const low  = tasks.some(t => t.priority === 'žemas');
+        dots = `<div class="dot-row">
+          ${high ? '<div class="dot high"></div>' : ''}
+          ${mid  ? '<div class="dot mid"></div>'  : ''}
+          ${low  ? '<div class="dot low"></div>'  : ''}
+        </div>`;
+      }
+
+      const cls = [
+        'cal-day',
+        isToday    ? 'today'    : '',
+        isSelected ? 'selected' : '',
+      ].filter(Boolean).join(' ');
+
+      html += `<div class="${cls}" onclick="selectDate('${iso}')">${d}${dots}</div>`;
+    }
+
+    // Next month fill
+    const total = startOffset + daysInMonth;
+    const remaining = total % 7 === 0 ? 0 : 7 - (total % 7);
+    for (let d = 1; d <= remaining; d++) {
+      html += `<div class="cal-day other-month">${d}</div>`;
+    }
+
+    document.getElementById('cal-days').innerHTML = html;
+  }
+
+  function selectDate(iso) {
+    selectedDate = iso;
+    renderCalendar();
+    renderDayTasks();
+  }
+
+  // ── Statistics ──
+  let statsOpen = false;
+
+  function toggleStats() {
+    statsOpen = !statsOpen;
+    const panel = document.getElementById('stats-panel');
+    panel.classList.toggle('open', statsOpen);
+    document.getElementById('stats-btn').textContent = statsOpen ? '✕ Uždaryti' : '📊 Statistika';
+    if (statsOpen) renderStats();
+  }
+
+  function renderStats() {
+    const active   = allTasks.filter(t => !t.done);
+    const done     = allTasks.filter(t => t.done);
+    const high     = active.filter(t => t.priority === 'aukštas').length;
+    const mid      = active.filter(t => t.priority === 'vidutinis').length;
+    const low      = active.filter(t => t.priority === 'žemas').length;
+
+    document.getElementById('stats-grid').innerHTML = `
+      <div class="stat-card"><div class="stat-num">${allTasks.length}</div><div class="stat-label">Iš viso</div></div>
+      <div class="stat-card"><div class="stat-num">${active.length}</div><div class="stat-label">Neatliktų</div></div>
+      <div class="stat-card"><div class="stat-num gold">${done.length}</div><div class="stat-label">Atliktų</div></div>
+      <div class="stat-card"><div class="stat-num red">${high}</div><div class="stat-label">Aukštas</div></div>
+      <div class="stat-card"><div class="stat-num gold">${mid}</div><div class="stat-label">Vidutinis</div></div>
+      <div class="stat-card"><div class="stat-num">${low}</div><div class="stat-label">Žemas</div></div>
+    `;
+
+    // 7-day mini-bar chart — count active tasks by deadline
+    const days = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      const iso = toISO(d);
+      const count = (tasksByDate[iso] || []).length;
+      days.push({ iso, count, label: `${d.getDate()}/${d.getMonth()+1}` });
+    }
+    const maxCount = Math.max(...days.map(d => d.count), 1);
+    document.getElementById('chart-bars').innerHTML = days.map(d => {
+      const pct = Math.round((d.count / maxCount) * 100);
+      const hasDone = allTasks.some(t => t.done && t.deadline === d.iso);
+      return `
+        <div class="chart-col">
+          <div class="chart-bar-wrap">
+            <div class="chart-bar ${hasDone ? 'has-done' : ''}" style="height:${pct}%"></div>
+          </div>
+          <div class="chart-label">${d.label}${d.count ? `<br><b>${d.count}</b>` : ''}</div>
+        </div>`;
+    }).join('');
+  }
+
+  // ── Inline edit ──
+  function startEdit(id, field, el) {
+    if (el.querySelector('input')) return; // already editing
+    const original = el.textContent.trim();
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'inline-edit';
+    input.value = original;
+    el.textContent = '';
+    el.appendChild(input);
+    input.focus();
+    input.select();
+
+    const commit = () => {
+      const val = input.value.trim();
+      if (val && val !== original) {
+        saveEdit(id, field, val);
+      } else {
+        fetchTasks();
+      }
+    };
+
+    input.addEventListener('blur', commit);
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+      if (e.key === 'Escape') { input.removeEventListener('blur', commit); fetchTasks(); }
+    });
+  }
+
+  async function saveEdit(id, field, value) {
+    await fetch(`/api/tasks/${id}`, {
+      method: 'PATCH',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({[field]: value}),
+    });
+    fetchTasks();
+  }
+
+  // ── Search ──
+  function clearSearch() {
+    filterQuery = '';
+    document.getElementById('search-input').value = '';
+    document.getElementById('search-clear').classList.remove('visible');
+    document.getElementById('search-count').textContent = '';
+    renderDayTasks();
+  }
+
+  // ── Day tasks ──
+  function taskCardHTML(t) {
+    return `
+      <div class="task-card ${t.done ? 'done' : ''} p-${t.priority}">
+        <button class="done-btn" onclick="markDone(${t.id})">${t.done ? '✓' : ''}</button>
+        <div class="task-info">
+          <div class="task-title editable" onclick="startEdit(${t.id}, 'title', this)" title="Spustelėk norėdamas redaguoti">${esc(t.title)}</div>
+          <div class="task-meta">
+            <span class="tag priority-${t.priority}">${priLabel(t.priority)}</span>
+            ${t.category ? `<span class="tag category">📁 ${esc(t.category)}</span>` : ''}
+          </div>
+          ${t.notes ? `<div class="task-notes">📝 ${esc(t.notes)}</div>` : ''}
+        </div>
+        <button class="delete-btn" onclick="deleteTask(${t.id})" title="Ištrinti užduotį">🗑 <span class="btn-label">Trinti</span></button>
+      </div>`;
+  }
+
+  function renderDayTasks() {
+    const q = filterQuery.toLowerCase();
+    const matchesQuery = t => !q || t.title.toLowerCase().includes(q) || (t.category || '').toLowerCase().includes(q);
+
+    const dayTasks     = allTasks.filter(t => t.deadline === selectedDate);
+    const undatedTasks = allTasks.filter(t => !t.deadline);
+    const visibleDay   = dayTasks.filter(matchesQuery);
+    const visibleUnd   = undatedTasks.filter(matchesQuery);
+    const active       = dayTasks.filter(t => !t.done).length;
+
+    document.getElementById('day-title').textContent = fmtDisplay(selectedDate);
+    document.getElementById('day-sub').textContent =
+      dayTasks.length ? `${active} neatliktų iš ${dayTasks.length}` : 'Nėra užduočių šiai dienai';
+
+    // Search count hint
+    const countEl = document.getElementById('search-count');
+    if (q) {
+      const total = visibleDay.length + visibleUnd.length;
+      countEl.textContent = total ? `Rasta: ${total}` : 'Nieko nerasta';
+    } else {
+      countEl.textContent = '';
+    }
+
+    const list = document.getElementById('task-list');
+    if (!q && !dayTasks.length) {
+      list.innerHTML = '<div class="empty"><span>📅</span>Šiai dienai užduočių nėra.<br>Pridėk pirmą!</div>';
+    } else if (q && !visibleDay.length) {
+      list.innerHTML = '<div class="empty"><span>🔍</span>Nerasta šios dienos užduotyse.</div>';
+    } else {
+      list.innerHTML = visibleDay.map(taskCardHTML).join('');
+    }
+
+    // Skyrius „Be datos"
+    const undatedSection = document.getElementById('undated-section');
+    const undatedList    = document.getElementById('undated-list');
+
+    if (visibleUnd.length) {
+      undatedSection.style.display = 'block';
+      undatedList.innerHTML = visibleUnd.map(taskCardHTML).join('');
+    } else {
+      undatedSection.style.display = q && undatedTasks.length ? 'none' : (undatedTasks.length ? 'block' : 'none');
+      if (undatedSection.style.display === 'block') {
+        undatedList.innerHTML = '<div class="empty" style="padding:10px 0">Nerasta.</div>';
+      }
+    }
+  }
+
+  function priLabel(p) {
+    return {aukštas:'🔴 Aukštas', vidutinis:'🟡 Vidutinis', žemas:'🟢 Žemas'}[p] || p;
+  }
+
+  function esc(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+             .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
+  document.getElementById('title-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') addTask();
+  });
+
+  document.getElementById('search-input').addEventListener('input', e => {
+    filterQuery = e.target.value.trim();
+    document.getElementById('search-clear').classList.toggle('visible', filterQuery.length > 0);
+    renderDayTasks();
+  });
+
+  document.getElementById('search-input').addEventListener('keydown', e => {
+    if (e.key === 'Escape') clearSearch();
+  });
+
+  // Init
+  renderCalendar();
+  renderDayTasks();
+  fetchTasks();
+</script>
+</body>
+</html>

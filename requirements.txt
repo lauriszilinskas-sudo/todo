@@ -1,0 +1,2 @@
+# Nereikia jokių išorinių bibliotekų.
+# Naudojama tik Python standartinė biblioteka: urllib, json, sqlite3
